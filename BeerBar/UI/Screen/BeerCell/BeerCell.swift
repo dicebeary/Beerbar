@@ -32,9 +32,5 @@ final class BeerCell: UITableViewCell {
         taglineLabel.text = beer.tagline
         descriptionLabel.text = beer.description
         beerImageView.kf.setImage(with: URL(string: beer.imageUrl))
-    }
-    
-    static var nib: UINib {
-        UINib(nibName: "BeerCell", bundle: nil)
-    }
+    }    
 }

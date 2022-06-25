@@ -17,7 +17,8 @@ final class NetworkManager: NetworkManagerInterface {
     func getBeer(count: Int,
                  page: Int,
                  completionBlock: @escaping BeersRequest) {
-        session.request(Constants.api + "/beers")
+        print(Constants.api + "/beers?page=\(page)&per_page=\(count)")
+        session.request(Constants.api + "/beers?page=\(page)&per_page=\(count)")
             .validate(statusCode: 200..<300)
             .responseDecodable(of: [BeerResponseModel].self) { response in
                 switch response.result {

@@ -15,14 +15,15 @@ protocol BeerListViewModelInterface {
 final class BeerListViewModel: BeerListViewModelInterface {
     private let networkManager: NetworkManagerInterface
     
-    private let currentPage: Int = 0
+    private var currentPage: Int = 1
+    private let pageSize = 20
     
     init(networkManager: NetworkManagerInterface) {
         self.networkManager = networkManager
     }
 
     func getInitialBeer(completionBlock: @escaping BeerListRequest) {
-        networkManager.getBeer(count: 20, page: 0) { response in
+        networkManager.getBeer(count: pageSize, page: 1) { response in
             guard let response = response else {
                 completionBlock([])
                 return
@@ -34,6 +35,16 @@ final class BeerListViewModel: BeerListViewModelInterface {
     }
     
     func getNextPage(completionBlock: @escaping BeerListRequest) {
-        
+        let nextPage = currentPage + 1
+        networkManager.getBeer(count: pageSize, page: nextPage) { response in
+            guard let response = response else {
+                // TODO: Handle error
+                completionBlock([])
+                return
+            }
+            let beers = response.map { Beer($0) }
+            
+            completionBlock(beers)
+        }
     }
 }
