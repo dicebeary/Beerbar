@@ -9,14 +9,15 @@ import UIKit
 import Resolver
 
 final class BeerListScreen: UIViewController {
-    @Injected var viewModel: BeerListViewModel
+    @Injected private var viewModel: BeerListViewModel
     
-    @IBOutlet weak var tableView: UITableView!
-    
+    @IBOutlet private weak var tableView: UITableView!
+    private let refreshControl = UIRefreshControl()
+
     private var allPageLoaded = false
-    
     private var beers: [Beer] = [] {
         didSet {
+            debugPrint(beers.count)
             DispatchQueue.main.async { [weak self] in
                 self?.tableView.reloadData()
             }
@@ -24,14 +25,39 @@ final class BeerListScreen: UIViewController {
     }
     
     override func viewDidLoad() {
-        tableView.register(BeerCell.nib, forCellReuseIdentifier: "BeerCell")
-        tableView.register(LoadingCell.nib, forCellReuseIdentifier: "LoadingCell")
-        tableView.dataSource = self
-        tableView.delegate = self
+        setupTableView()
+        setupRefreshControl()
         
         viewModel.getInitialBeer { [weak self] beers in
-            debugPrint(beers)
             self?.beers = beers
+        }
+    }
+}
+
+// MARK: Setup TableView
+
+extension BeerListScreen {
+    func setupTableView() {
+        tableView.register(BeerCell.nib, forCellReuseIdentifier: BeerCell.identifier)
+        tableView.register(LoadingCell.nib, forCellReuseIdentifier: LoadingCell.identifier)
+        tableView.dataSource = self
+        tableView.delegate = self
+    }
+}
+
+// MARK: Setup RefreshControl
+
+extension BeerListScreen {
+    func setupRefreshControl() {
+        refreshControl.attributedTitle = NSAttributedString(string: "Pull to refresh")
+           refreshControl.addTarget(self, action: #selector(self.pullToRefresh(_:)), for: .valueChanged)
+           tableView.addSubview(refreshControl)
+    }
+    
+    @objc func pullToRefresh(_ sender: AnyObject) {
+        viewModel.getInitialBeer { [weak self] beers in
+            self?.beers = beers
+            self?.refreshControl.endRefreshing()
         }
     }
 }
@@ -47,7 +73,7 @@ extension BeerListScreen: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if beers.count > indexPath.row {
-            guard let cell = tableView.dequeueReusableCell(withIdentifier: "BeerCell", for: indexPath) as? BeerCell else {
+            guard let cell = tableView.dequeueReusableCell(withIdentifier: BeerCell.identifier, for: indexPath) as? BeerCell else {
                 return UITableViewCell()
             }
 
@@ -55,7 +81,7 @@ extension BeerListScreen: UITableViewDataSource {
             
             return cell
         } else {
-            guard let cell = tableView.dequeueReusableCell(withIdentifier: "LoadingCell", for: indexPath) as? LoadingCell else {
+            guard let cell = tableView.dequeueReusableCell(withIdentifier: LoadingCell.identifier, for: indexPath) as? LoadingCell else {
                 return UITableViewCell()
             }
             cell.startAnimating()
@@ -66,6 +92,14 @@ extension BeerListScreen: UITableViewDataSource {
 
 extension BeerListScreen: UITableViewDelegate {
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-//        viewModel.getNextPage(completionBlock: <#T##BeerListRequest##BeerListRequest##([Beer]) -> ()#>)
+        if cell is LoadingCell, indexPath.row != 0 {
+            viewModel.getNextPage { [weak self] nextBeers in
+                if nextBeers.count == 0 {
+                    self?.allPageLoaded = true
+                }
+                
+                self?.beers += nextBeers
+            }
+        }
     }
 }

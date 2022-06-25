@@ -24,7 +24,8 @@ final class NetworkManager: NetworkManagerInterface {
                 switch response.result {
                 case .success(let responseModel):
                     completionBlock(responseModel)
-                case .failure:
+                case .failure(let error):
+                    debugPrint(error)
                     completionBlock(nil)
                 }
         }

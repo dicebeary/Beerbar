@@ -19,6 +19,6 @@ struct Beer {
         self.name = beerApiModel.name
         self.tagline = beerApiModel.tagline
         self.description = beerApiModel.description
-        self.imageUrl = beerApiModel.imageUrl
+        self.imageUrl = beerApiModel.imageUrl ?? ""
     }
 }

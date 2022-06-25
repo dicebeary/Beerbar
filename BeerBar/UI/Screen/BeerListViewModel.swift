@@ -23,20 +23,21 @@ final class BeerListViewModel: BeerListViewModelInterface {
     }
 
     func getInitialBeer(completionBlock: @escaping BeerListRequest) {
-        networkManager.getBeer(count: pageSize, page: 1) { response in
+        networkManager.getBeer(count: pageSize, page: 1) { [weak self] response in
             guard let response = response else {
                 completionBlock([])
                 return
             }
             let beers = response.map { Beer($0) }
-            
+
+            self?.currentPage = 1
             completionBlock(beers)
         }
     }
     
     func getNextPage(completionBlock: @escaping BeerListRequest) {
         let nextPage = currentPage + 1
-        networkManager.getBeer(count: pageSize, page: nextPage) { response in
+        networkManager.getBeer(count: pageSize, page: nextPage) { [weak self] response in
             guard let response = response else {
                 // TODO: Handle error
                 completionBlock([])
@@ -44,6 +45,7 @@ final class BeerListViewModel: BeerListViewModelInterface {
             }
             let beers = response.map { Beer($0) }
             
+            self?.currentPage = nextPage
             completionBlock(beers)
         }
     }
